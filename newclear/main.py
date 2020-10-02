@@ -16,7 +16,6 @@ version = '0.0.1'
 def main():
     code = codegen(prog_name, version, classes_to_gen)
     print(code)
-    exec(code)  # pylint: disable=exec-used
 
 
 if __name__ == '__main__':

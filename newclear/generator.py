@@ -3,10 +3,15 @@ import inspect
 import typing
 
 def codegen(prog_name, version, classes_to_gen):
-    code = f'''
+    code = f'''#!/usr/bin/env python3
 import click
 import sys
 from click_skeleton import AdvancedGroup, skeleton
+'''
+    for class_to_gen in classes_to_gen:
+        code += f'''
+from newclear.{class_to_gen.__name__.lower()} import {class_to_gen.__name__}'''
+    code += f'''
 
 @skeleton(name='{prog_name}', version='{version}')
 def cli():
@@ -87,7 +92,6 @@ def {class_to_gen.__name__.lower()}_cli():
 )'''
 
             for method_parameter in method_parameters.values():
-                print(f'{method_parameter=} : {method_parameter.annotation}')
                 if method_parameter.default is inspect.Parameter.empty:
                     code += f'''
 @click.argument('{method_parameter.name}')'''

@@ -1,0 +1,9 @@
+colorama==0.4.3; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0"
+defopt==6.0.1; python_version >= "3.5"
+docutils==0.16; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.5.0"
+makefun==1.9.3
+pockets==0.9.1
+returns==0.14.0; python_version >= "3.6" and python_version < "4.0"
+six==1.15.0; python_version >= "2.7" and python_full_version < "3.0.0" or python_full_version >= "3.3.0"
+sphinxcontrib-napoleon==0.7
+typing-extensions==3.7.4.3

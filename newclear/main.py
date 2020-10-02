@@ -1,215 +1,184 @@
 #!/usr/bin/env python3
+from typing import Any, List
+import typing
 import logging
-import sys
 import inspect
-# import uuid
-# import typing
-# from returns.curry import partial
-import defopt
-import makefun
+import uuid
 
 
 logger = logging.getLogger(__name__)
 
 
 class Instance:
-    # def __init__(self, region: str, uuid: uuid.UUID, dry: bool = False):
-    def __init__(self, region: str, uuid: str, dry: bool = False):
+    '''Instance tool'''
+    def __init__(self, region: str, uuid: uuid.UUID, verbosity: int = 1, dry: bool = False, quiet: bool = True):
         self.region = region
-        self.uuid = uuid
+        self.uuid = str(uuid)
+        self.verbosity = verbosity
         self.dry = dry
-        print(f'{self=} Instance.__init__')
+        self.quiet = quiet
 
     def __repr__(self):
+        rep = f"{self.uuid} - {self.region}"
         if self.dry:
-            return f"{self.uuid} - {self.region} (dry)"
-        return f"{self.uuid} - {self.region}"
+            rep += " (dry)"
+        return rep
 
     def reboot(self, force: bool = False):
+        '''Reboot an instance'''
         print(f"{self=} : rebooting {force=}")
 
+    def reboot_hard(self):
+        '''Reboot hard instance'''
+        print(f"{self=} : rebooting hard")
+        self.reboot(force=True)
 
-class InstanceCli(Instance):
-    def __init__(self, prog_name=None, version=None, prog_args=None, invoke_without_command=False):  # pylint:disable=super-init-not-called
-        self.version = version if version is not None else 'unknown'
-        self.invoke_without_command = invoke_without_command
-        self.prog_name = prog_name if prog_name is not None else sys.argv[0]
-        self.prog_args = list(prog_args) if prog_args is not None else sys.argv[1:]
-        self.method_name = None
-        self.method = None
-        self.method_list = [func for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")]
-        self.constructor_spec = inspect.getfullargspec(Instance.__init__)
-        self.constructor_nargs = len(self.constructor_spec.args) - 1
-        self._main()
 
-    def _main(self):
-        if not self.prog_args:
-            if not self.invoke_without_command:
-                self.__help_exit()
-        else:
-            if self.prog_args[0] == 'version':
-                self.__version_exit()
-            if self.prog_args[0] in ('-h', '--help', 'help'):
-                # we want global help
-                self.__help_exit()
-
-            if self.prog_args[0] in self.method_list:
-                self.method_name = self.prog_args.pop(0)
-                # maybe we want a method help
-                if any([prog_arg in ('-h', '--help', 'help') for prog_arg in self.prog_args]):
-                    self.__help_method_exit()
-            else:
-                # bad method name
-                self.__help_exit()
-
-        self.__construct()
-        if not self.method_name:
-            return
-        self.__execute()
-
-    def __construct_exit(self):
-        self.__construct('-h')
-        sys.exit(1)
-
-    def __version_exit(self):
-        print(self)
-        sys.exit(1)
+class Instances:
+    '''Instance tool'''
+    def __init__(self, region: str, uuids: List[uuid.UUID], flags: List[str] = [], verbosity: int = 1, dry: bool = False, quiet: bool = True):
+        self.region = region
+        self.flags = flags
+        self.instances = [Instance(region=region, uuid=uuid, verbosity=verbosity, dry=dry, quiet=quiet) for uuid in uuids]
+        self.dry = dry
 
     def __repr__(self):
-        return f'{self.prog_name=} - {self.version=}'
+        rep = f"{len(self.instances)} instances - {self.region} - {self.flags=}"
+        if self.dry:
+            rep += " (dry)"
+        return rep
 
-    def __construct(self, *args):
-        constructor_signature = inspect.signature(Instance.__init__)
-        constructor_args = self.prog_args[:self.constructor_nargs]
-        new_constructor_signature = makefun.remove_signature_parameters(constructor_signature, 'self')
+    def reboot(self, force: bool = False):
+        '''Reboot an instance'''
+        print(f"{self=} : rebooting {force=}")
+        for instance in self.instances:
+            instance.reboot(force)
 
-        @makefun.with_signature(new_constructor_signature, func_name='instance')
-        def super_init(**init_kwargs):
-            print(f'{init_kwargs}')
-            Instance.__init__(self, **init_kwargs)
+    def reboot_hard(self):
+        '''Reboot hard instance'''
+        print(f"{self=} : rebooting hard")
+        for instance in self.instances:
+            instance.reboot_hard()
 
-        constructor_args.extend(args)
-        defopt.run(super_init, argv=constructor_args, strict_kwonly=False, short={})
 
-    def __execute(self, *args):
-        method = getattr(self, self.method_name)
+classes_to_gen = [Instance, Instances]
+prog_name = 'unity'
+version = '0.0.1'
+
+code = f'''
+import click
+from click_skeleton import AdvancedGroup, skeleton
+
+@skeleton(name='{prog_name}', version='{version}')
+def cli():
+    pass
+
+'''
+
+for class_to_gen in classes_to_gen:
+    constructor_signature = inspect.signature(class_to_gen.__init__)
+    constructor_parameters = constructor_signature.parameters.copy()
+    del constructor_parameters['self']
+    constructor_arguments = ', '.join(constructor_parameters.keys())
+    code += f'''
+@click.group('{class_to_gen.__name__.lower()}', help='{class_to_gen.__doc__}', cls=AdvancedGroup)
+def {class_to_gen.__name__.lower()}_cli():
+    pass
+'''
+    method_list = {
+        func.replace("_", "-"): func
+        for func in dir(class_to_gen)
+        if callable(getattr(class_to_gen, func)) and not func.startswith("_")
+    }
+    for command_name, method_name in method_list.items():
+        method = getattr(class_to_gen, method_name)
+        method_docstring = method.__doc__
         method_signature = inspect.signature(method)
-        print(f'{method_signature=}')
+        method_parameters = method_signature.parameters.copy()
+        del method_parameters['self']
+        method_arguments = ', '.join(method_parameters.keys())
+        command_arguments = ', '.join(constructor_parameters.keys())
+        if method_parameters:
+            command_arguments += ', ' + method_arguments
 
-        @makefun.with_signature(method_signature, func_name=self.method_name)
-        def super_method(**method_kwargs):
-            print(f"{method=} : {method_kwargs=}")
-            method(**method_kwargs)
+        code += f'''
 
-        method_args = self.prog_args[self.constructor_nargs:]
-        method_args.extend(args)
-        defopt.run(super_method, argv=method_args, strict_kwonly=False, short={})
+@{class_to_gen.__name__.lower()}_cli.command('{command_name}', short_help='{method_docstring}')'''
 
-    def __help_exit(self, method=None):
-        if method is None:
-            print(f"you need a method: possibilities {self.method_list}")
-        else:
-            print(f"unknown method {method} : possibilities {self.method_list}")
-        sys.exit(1)
+        for constructor_parameter in constructor_parameters.values():
 
-    def __help_method_exit(self):
-        self.__execute('-h')
-        sys.exit(1)
+            if constructor_parameter.default is inspect.Parameter.empty:
+                code += f"""
+@click.argument(
+    '{constructor_parameter.name}"""
+            else:
+                code += f"""
+@click.option(
+    '--{constructor_parameter.name}"""
 
+            if constructor_parameter.annotation is bool:
+                code += f"""/--no-{constructor_parameter.name}',
+    is_flag=True,
+    default={constructor_parameter.default},
+    show_default=True,"""
+            else:
+                code += f"""',"""
 
-# class Cli(type):
-#     def __init__(cls, *args, **kwargs):  # pylint:disable=super-init-not-called
-#         print(f'__init__ : {cls=}')
-#         print(f'__init__ : {args=}')
-#         print(f'__init__ : {kwargs=}')
-#
-#     def __new__(cls, cls_name, bases, dct, prog_name=None, prog_args=None):
-#
-#         def main(cls, *args, **kwargs):
-#             print(f'main : {args=}')
-#             print(f'main : {kwargs=}')
-#             print(f'main : {cls=} : hello main')
-#
-#             if cls.method:
-#                 cls.method_args = cls.prog_args[cls.constructor_nargs:]
-#                 try:
-#                     cls.instance_method = getattr(cls.instance, cls.method)
-#                     cls.instance_method(cls.instance, *cls.method_args)
-#                 except Exception as e:  # pylint:disable=broad-except
-#                     logger.error(e)
-#                     raise e
-#             print(f'{cls.method_args=}')
-#
-#         prog_name = prog_name if prog_name is not None else sys.argv[0]
-#         prog_args = list(prog_args) if prog_args is not None else sys.argv[1:]
-#         base = bases[0]
-#
-#         print(f'__new__ : {cls=}')
-#         print(f'__new__ : {cls_name=}')
-#         print(f'__new__ : {bases=}')
-#         print(f'__new__ : {base=}')
-#         print(f'__new__ : {dct=}')
-#         print(f'__new__ : {prog_name=}')
-#         print(f'__new__ : {prog_args=}')
-#
-#         print('BEFORE SUPER')
-#         newclass = super(Cli, cls).__new__(cls, cls_name, bases, dct)
-#         print(f'{newclass=} {dir(newclass)}')
-#         print('AFTER SUPER')
-#         setattr(newclass, main.__name__, main)
-#         setattr(newclass, 'prog_name', prog_name)
-#         setattr(newclass, 'prog_args', prog_args)
-#         setattr(newclass, 'base', base)
-#         setattr(newclass, 'dct', dct)
-#         return newclass
-#
-#     def __call__(cls, *args, **kwargs):
-#         print(f'__call__ : {cls.prog_name=}')
-#         print(f'__call__ : {cls.prog_args=}')
-#         print(f'__call__ : {args=}')
-#         print(f'__call__ : {kwargs=}')
-#
-#         print(f'{cls.base=}')
-#
-#         cls.method = cls.prog_args.pop(0) if cls.prog_args else None
-#         print(f'{cls.method=}')
-#
-#         cls.constructor_spec = inspect.getfullargspec(cls.base.__init__)
-#         print(f'{cls.constructor_spec=}')
-#
-#         cls.constructor_signature = inspect.signature(cls.base.__init__)
-#         print(f'{cls.constructor_signature=}')
-#
-#         cls.constructor_nargs = len(cls.constructor_spec.args) - 1
-#         print(f'{cls.constructor_nargs=}')
-#
-#         cls.constructor_args = cls.prog_args[:cls.constructor_nargs]
-#         print(f'{cls.constructor_args=}')
-#
-#         cls.new_constructor = makefun.remove_signature_parameters(cls.constructor_signature, 'self')
-#         print(f'{cls.new_constructor=}')
-#
-#         # cls.new_constructor_spec = inspect.getfullargspec(cls.new_constructor)
-#         # print(f'{cls.new_constructor_spec=}')
-#
-#         # cls.new_constructor_signature = inspect.signature(cls.new_constructor)
-#         # print(f'{cls.new_constructor_signature=}')
-#
-#         # cls.instance = super().__call__(*cls.constructor_args)
-#         # print(f'{cls.instance=}')
-#
-#         # run if method specified
-#         cls.instance = defopt.run(cls.new_constructor, argv=cls.constructor_args)
-#         return cls.instance
-#
-#
-# class InstanceCli(Instance, metaclass=Cli, prog_name='newclear'):
-#     pass
+            if typing.get_origin(constructor_parameter.annotation) is list:
+                if constructor_parameter.default is inspect.Parameter.empty:
+                    code += f'''
+    nargs=-1,'''
+                else:
+                    code += f'''
+    multiple=True,'''
+
+            if constructor_parameter.annotation is uuid.UUID:
+                code += f'''
+    type=click.UUID,'''
+            elif constructor_parameter.annotation is str:
+                code += f'''
+    type=click.STRING,'''
+            elif constructor_parameter.annotation is float:
+                code += f'''
+    type=click.FLOAT,'''
+            elif constructor_parameter.annotation is int:
+                code += f'''
+    type=click.INT,'''
+            code += f'''
+)'''
+
+        for method_parameter in method_parameters.values():
+            print(f'{method_parameter=} : {method_parameter.annotation}')
+            if method_parameter.default is inspect.Parameter.empty:
+                code += f'''
+@click.argument('{method_parameter.name}')'''
+            elif method_parameter.annotation is bool:
+                code += f'''
+@click.option(
+    '--{method_parameter.name}/--no-{method_parameter.name}',
+    type={method_parameter.annotation.__name__},
+    default={method_parameter.default},
+    show_default=True,
+)'''
+
+        code += f'''
+def {method_name}({command_arguments}):
+    {class_to_gen.__name__.lower()} = {class_to_gen.__name__}({constructor_arguments})
+    {class_to_gen.__name__.lower()}.{method_name}({method_arguments})
+'''
+    code += f'''
+cli.add_group({class_to_gen.__name__.lower()}_cli, '{class_to_gen.__name__.lower()}')
+'''
+
+code += f'''
+cli.main(prog_name='{prog_name}')
+'''
 
 
 def main():
-    InstanceCli()  # pylint:disable=no-value-for-parameter
+    print(code)
+    exec(code)  # pylint: disable=exec-used
 
 
 if __name__ == '__main__':
-    pass
+    main()

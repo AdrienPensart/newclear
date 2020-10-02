@@ -8,14 +8,16 @@ authors = ["Adrien Pensart <crunchengine@gmail.com>"]
 newclear = 'newclear.main:main'
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8,<3.9"
 defopt = "^6.0.1"
 returns = "^0.14.0"
 makefun = "^1.9.3"
+click-skeleton = "^0.8.1"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.3"
 pylint = "^2.6.0"
+dephell = "^0.8.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0a5"]
@@ -27,3 +29,7 @@ jobs = 4
 disable = """
 disable=too-few-public-methods,logging-format-interpolation,line-too-long,too-many-arguments,protected-access,missing-docstring,invalid-name,too-many-public-methods,too-many-instance-attributes,duplicate-code,too-many-nested-blocks,too-many-branches,too-many-return-statements,too-many-statements,too-many-locals,too-few-public-methods,too-many-ancestors,abstract-method,anomalous-backslash-in-string,import-outside-toplevel,redefined-outer-name,unnecessary-lambda,c-extension-no-member,logging-fstring-interpolation
 """
+
+[tool.dephell.main]
+from = {format = "poetry", path = "pyproject.toml"}
+to = {format = "setuppy", path = "setup.py"}

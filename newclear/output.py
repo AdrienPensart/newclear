@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-import click
 import sys
+import click
 from click_skeleton import AdvancedGroup, skeleton
 
 from newclear.instance import Instance
 from newclear.instances import Instances
+
 
 @skeleton(name='unity', version='0.0.1')
 def cli():
@@ -47,7 +48,7 @@ def instance_cli():
     default=False,
     show_default=True,
 )
-def reboot(region, uuid, verbosity, dry, quiet, force):
+def instance_reboot(region, uuid, verbosity, dry, quiet, force):
     instance = Instance(region, uuid, verbosity, dry, quiet)
     instance.reboot(force)
 
@@ -77,11 +78,13 @@ def reboot(region, uuid, verbosity, dry, quiet, force):
     default=True,
     show_default=True,
 )
-def reboot_hard(region, uuid, verbosity, dry, quiet):
+def instance_reboot_hard(region, uuid, verbosity, dry, quiet):
     instance = Instance(region, uuid, verbosity, dry, quiet)
     instance.reboot_hard()
 
+
 cli.add_group(instance_cli, 'instance')
+
 
 @click.group('instances', help='Instance tool', cls=AdvancedGroup)
 def instances_cli():
@@ -99,7 +102,6 @@ def instances_cli():
 )
 @click.option(
     '--flags',
-    multiple=True,
 )
 @click.option(
     '--verbosity',
@@ -123,7 +125,7 @@ def instances_cli():
     default=False,
     show_default=True,
 )
-def reboot(region, uuids, flags, verbosity, dry, quiet, force):
+def instances_reboot(region, uuids, flags, verbosity, dry, quiet, force):
     instances = Instances(region, uuids, flags, verbosity, dry, quiet)
     instances.reboot(force)
 
@@ -139,7 +141,6 @@ def reboot(region, uuids, flags, verbosity, dry, quiet, force):
 )
 @click.option(
     '--flags',
-    multiple=True,
 )
 @click.option(
     '--verbosity',
@@ -157,11 +158,12 @@ def reboot(region, uuids, flags, verbosity, dry, quiet, force):
     default=True,
     show_default=True,
 )
-def reboot_hard(region, uuids, flags, verbosity, dry, quiet):
+def instances_reboot_hard(region, uuids, flags, verbosity, dry, quiet):
     instances = Instances(region, uuids, flags, verbosity, dry, quiet)
     instances.reboot_hard()
 
+
 cli.add_group(instances_cli, 'instances')
 
-sys.exit(cli.main(prog_name='unity'))
 
+sys.exit(cli.main(prog_name='unity'))

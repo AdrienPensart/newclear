@@ -1,11 +1,11 @@
-# import sys
+import sys
 import inspect
-import defopt
+import defopt  # type: ignore
 import makefun
 
-# import uuid
-# import typing
-# from returns.curry import partial
+
+from newclear.instance import Instance
+
 
 class InstanceCli(Instance):
     def __init__(self, prog_name=None, version='unknown', prog_args=None, invoke_without_command=False):  # pylint:disable=super-init-not-called
@@ -35,7 +35,7 @@ class InstanceCli(Instance):
             if self.prog_args[0] in self.method_list.keys():
                 self.method_name = self.prog_args.pop(0).replace("-", "_")
                 # maybe we want a method help
-                if any([prog_arg in ('-h', '--help', 'help') for prog_arg in self.prog_args]):
+                if any(prog_arg in ('-h', '--help', 'help') for prog_arg in self.prog_args):
                     self.__help_method_exit()
             else:
                 # bad method name
@@ -46,9 +46,9 @@ class InstanceCli(Instance):
             return
         self.__execute_method()
 
-    def __construct_exit(self):
-        self.__construct('-h')
-        sys.exit(1)
+    # def __construct_exit(self):
+    #     self.__construct('-h')
+    #     sys.exit(1)
 
     def __version_exit(self):
         print(self)

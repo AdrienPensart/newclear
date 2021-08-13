@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Optional
 import uuid
 from newclear.instance import Instance
 
 
 class Instances:
     '''Instance tool'''
-    def __init__(self, region: str, uuids: List[uuid.UUID], flags: List[str] = [], verbosity: int = 1, dry: bool = False, quiet: bool = True):
+    def __init__(self, region: str, uuids: List[uuid.UUID], flags: Optional[List[str]] = None, verbosity: int = 1, dry: bool = False, quiet: bool = True):
         self.region = region
         self.flags = flags
         self.instances = [Instance(region=region, uuid=uuid, verbosity=verbosity, dry=dry, quiet=quiet) for uuid in uuids]
@@ -28,5 +28,3 @@ class Instances:
         print(f"{self=} : rebooting hard")
         for instance in self.instances:
             instance.reboot_hard()
-
-

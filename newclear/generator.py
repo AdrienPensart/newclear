@@ -2,16 +2,18 @@ import uuid
 import inspect
 import typing
 
+
 def codegen(prog_name, version, classes_to_gen):
-    code = f'''#!/usr/bin/env python3
-import click
+    code = '''#!/usr/bin/env python3
 import sys
+import click
 from click_skeleton import AdvancedGroup, skeleton
 '''
     for class_to_gen in classes_to_gen:
         code += f'''
 from newclear.{class_to_gen.__name__.lower()} import {class_to_gen.__name__}'''
     code += f'''
+
 
 @skeleton(name='{prog_name}', version='{version}')
 def cli():
@@ -42,12 +44,13 @@ def {class_to_gen.__name__.lower()}_cli():
             del method_parameters['self']
             method_arguments = ', '.join(method_parameters.keys())
             command_arguments = ', '.join(constructor_parameters.keys())
+            class_name = class_to_gen.__name__.lower()
             if method_parameters:
                 command_arguments += ', ' + method_arguments
 
             code += f'''
 
-@{class_to_gen.__name__.lower()}_cli.command('{command_name}', short_help='{method_docstring}')'''
+@{class_name}_cli.command('{command_name}', short_help='{method_docstring}')'''
 
             for constructor_parameter in constructor_parameters.values():
 
@@ -66,29 +69,29 @@ def {class_to_gen.__name__.lower()}_cli():
     default={constructor_parameter.default},
     show_default=True,"""
                 else:
-                    code += f"""',"""
+                    code += """',"""
 
                 if typing.get_origin(constructor_parameter.annotation) is list:
                     if constructor_parameter.default is inspect.Parameter.empty:
-                        code += f'''
+                        code += '''
     nargs=-1,'''
                     else:
-                        code += f'''
+                        code += '''
     multiple=True,'''
 
                 if constructor_parameter.annotation is uuid.UUID:
-                    code += f'''
+                    code += '''
     type=click.UUID,'''
                 elif constructor_parameter.annotation is str:
-                    code += f'''
+                    code += '''
     type=click.STRING,'''
                 elif constructor_parameter.annotation is float:
-                    code += f'''
+                    code += '''
     type=click.FLOAT,'''
                 elif constructor_parameter.annotation is int:
-                    code += f'''
+                    code += '''
     type=click.INT,'''
-                code += f'''
+                code += '''
 )'''
 
             for method_parameter in method_parameters.values():
@@ -105,15 +108,16 @@ def {class_to_gen.__name__.lower()}_cli():
 )'''
 
             code += f'''
-def {method_name}({command_arguments}):
+def {class_name}_{method_name}({command_arguments}):
     {class_to_gen.__name__.lower()} = {class_to_gen.__name__}({constructor_arguments})
     {class_to_gen.__name__.lower()}.{method_name}({method_arguments})
 '''
         code += f'''
+
 cli.add_group({class_to_gen.__name__.lower()}_cli, '{class_to_gen.__name__.lower()}')
+
 '''
 
     code += f'''
-sys.exit(cli.main(prog_name='{prog_name}'))
-'''
+sys.exit(cli.main(prog_name='{prog_name}'))'''
     return code

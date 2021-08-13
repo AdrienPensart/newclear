@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-from typing import Any, List
-import typing
-import inspect
-import uuid
-
 from newclear.instance import Instance
 from newclear.instances import Instances
 from newclear.generator import codegen

@@ -10,14 +10,15 @@ newclear = 'newclear.main:main'
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9"
 defopt = "^6.0.1"
-returns = "^0.14.0"
 makefun = "^1.9.3"
-click-skeleton = "^0.8.1"
+click-skeleton = "^0.15"
+returns = "^0.16.0"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.3"
 pylint = "^2.6.0"
-dephell = "^0.8.3"
+poetry2setup = "^1.0.0"
+mypy = "^0.910"
 
 [build-system]
 requires = ["poetry-core>=1.0.0a5"]

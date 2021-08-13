@@ -24,4 +24,3 @@ class Instance:
         '''Reboot hard instance'''
         print(f"{self=} : rebooting hard")
         self.reboot(force=True)
-

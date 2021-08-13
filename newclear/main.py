@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-from newclear.instance import Instance
-from newclear.instances import Instances
+from newclear.region import Region
+from newclear.region_instance import RegionInstance
+# from newclear.instance import Instance
+# from newclear.instances import Instances
 from newclear.generator import codegen
 
-classes_to_gen = [Instance, Instances]
+# classes_to_gen = [Region, Instance, Instances]
+classes_to_gen = [Region, RegionInstance]
 prog_name = 'unity'
 version = '0.0.1'
 

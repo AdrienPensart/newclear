@@ -3,6 +3,11 @@ import uuid
 
 class Instance:
     '''Instance tool'''
+    verbosity_help = "Verbosity flag, you can choose the level of debugging"
+    dry_help = "Do not do real actions"
+    quiet_help = "Print only important messages"
+    force_help = "Force action"
+
     def __init__(self, region: str, uuid: uuid.UUID, verbosity: int = 1, dry: bool = False, quiet: bool = True):
         self.region = region
         self.uuid = str(uuid)

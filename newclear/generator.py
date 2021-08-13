@@ -1,6 +1,10 @@
+from typing import Union
+import logging
 import uuid
 import inspect
 import typing
+
+logger = logging.getLogger(__name__)
 
 
 def codegen(prog_name, version, classes_to_gen):
@@ -31,6 +35,17 @@ def cli():
 def {class_to_gen.__name__.lower()}_cli():
     pass
 '''
+        options_help = {}
+        for key, value in inspect.getmembers(class_to_gen):
+            if key.startswith('_'):
+                continue
+            elems = key.split('_')
+            if len(elems) < 2:
+                continue
+            if elems[-1] != "help":
+                continue
+            options_help['_'.join(elems[0:-1])] = value
+
         method_list = {
             func.replace("_", "-"): func
             for func in dir(class_to_gen)
@@ -53,44 +68,69 @@ def {class_to_gen.__name__.lower()}_cli():
 @{class_name}_cli.command('{command_name}', short_help='{method_docstring}')'''
 
             for constructor_parameter in constructor_parameters.values():
+                default_value = constructor_parameter.default
+                annotation = constructor_parameter.annotation
+                origin = typing.get_origin(annotation)
+                args = typing.get_args(annotation)
+                help_string = options_help.get(constructor_parameter.name, "")
+                # logger.error(f"{constructor_parameter} : origin = {origin} | args = {args} | default value = {default_value}")
 
-                if constructor_parameter.default is inspect.Parameter.empty:
-                    code += f"""
+                if (origin is None or origin is list) and default_value is inspect.Parameter.empty:
+                    if origin is not None and origin is list:
+                        annotation = args[0]
+                        # logger.error(f"{constructor_parameter} : new annotation {annotation}")
+                    code += f'''
 @click.argument(
-    '{constructor_parameter.name}"""
+    '{constructor_parameter.name}'''
                 else:
-                    code += f"""
+                    code += f'''
 @click.option(
-    '--{constructor_parameter.name}"""
+    '--{constructor_parameter.name}'''
 
-                if constructor_parameter.annotation is bool:
+                if annotation is bool:
                     code += f"""/--no-{constructor_parameter.name}',
-    is_flag=True,
-    default={constructor_parameter.default},
-    show_default=True,"""
+    is_flag=True,"""
                 else:
                     code += """',"""
 
-                if typing.get_origin(constructor_parameter.annotation) is list:
-                    if constructor_parameter.default is inspect.Parameter.empty:
-                        code += '''
+                if origin is list and default_value is inspect.Parameter.empty:
+                    code += '''
     nargs=-1,'''
-                    else:
+                elif origin is Union:
+                    new_args = typing.get_args(args[0])
+                    new_origin = typing.get_origin(args[0])
+                    if new_origin is list:
+                        annotation = new_args[0]
+                        # logger.error(f"{constructor_parameter} : new annotation {annotation}")
+                        help_string += '  [multiple]'
                         code += '''
     multiple=True,'''
 
-                if constructor_parameter.annotation is uuid.UUID:
+                elif default_value is not inspect.Parameter.empty:
+                    code += f'''
+    default={default_value},
+    show_default=True,'''
+
+                if annotation is bool:
+                    pass
+                elif annotation is uuid.UUID:
                     code += '''
     type=click.UUID,'''
-                elif constructor_parameter.annotation is str:
+                elif annotation is str:
                     code += '''
     type=click.STRING,'''
-                elif constructor_parameter.annotation is float:
+                elif annotation is float:
                     code += '''
     type=click.FLOAT,'''
-                elif constructor_parameter.annotation is int:
+                elif annotation is int:
                     code += '''
     type=click.INT,'''
+                else:
+                    logger.error(f"Unsupported param : {annotation}, defaults to string")
+
+                if help_string:
+                    code += f'''
+    help="{help_string}",'''
                 code += '''
 )'''
 

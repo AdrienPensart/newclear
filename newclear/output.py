@@ -28,19 +28,24 @@ def instance_cli():
 )
 @click.option(
     '--verbosity',
+    default=1,
+    show_default=True,
     type=click.INT,
+    help="Verbosity flag, you can choose the level of debugging",
 )
 @click.option(
     '--dry/--no-dry',
     is_flag=True,
     default=False,
     show_default=True,
+    help="Do not do real actions",
 )
 @click.option(
     '--quiet/--no-quiet',
     is_flag=True,
     default=True,
     show_default=True,
+    help="Print only important messages",
 )
 @click.option(
     '--force/--no-force',
@@ -64,19 +69,24 @@ def instance_reboot(region, uuid, verbosity, dry, quiet, force):
 )
 @click.option(
     '--verbosity',
+    default=1,
+    show_default=True,
     type=click.INT,
+    help="Verbosity flag, you can choose the level of debugging",
 )
 @click.option(
     '--dry/--no-dry',
     is_flag=True,
     default=False,
     show_default=True,
+    help="Do not do real actions",
 )
 @click.option(
     '--quiet/--no-quiet',
     is_flag=True,
     default=True,
     show_default=True,
+    help="Print only important messages",
 )
 def instance_reboot_hard(region, uuid, verbosity, dry, quiet):
     instance = Instance(region, uuid, verbosity, dry, quiet)
@@ -99,25 +109,34 @@ def instances_cli():
 @click.argument(
     'uuids',
     nargs=-1,
+    type=click.UUID,
 )
 @click.option(
     '--flags',
+    multiple=True,
+    type=click.STRING,
+    help="Set some flags on this instance list  [multiple]",
 )
 @click.option(
     '--verbosity',
+    default=1,
+    show_default=True,
     type=click.INT,
+    help="Verbosity flag, you can choose the level of debugging",
 )
 @click.option(
     '--dry/--no-dry',
     is_flag=True,
     default=False,
     show_default=True,
+    help="Do not do real actions",
 )
 @click.option(
     '--quiet/--no-quiet',
     is_flag=True,
     default=True,
     show_default=True,
+    help="Print only important messages",
 )
 @click.option(
     '--force/--no-force',
@@ -138,25 +157,34 @@ def instances_reboot(region, uuids, flags, verbosity, dry, quiet, force):
 @click.argument(
     'uuids',
     nargs=-1,
+    type=click.UUID,
 )
 @click.option(
     '--flags',
+    multiple=True,
+    type=click.STRING,
+    help="Set some flags on this instance list  [multiple]",
 )
 @click.option(
     '--verbosity',
+    default=1,
+    show_default=True,
     type=click.INT,
+    help="Verbosity flag, you can choose the level of debugging",
 )
 @click.option(
     '--dry/--no-dry',
     is_flag=True,
     default=False,
     show_default=True,
+    help="Do not do real actions",
 )
 @click.option(
     '--quiet/--no-quiet',
     is_flag=True,
     default=True,
     show_default=True,
+    help="Print only important messages",
 )
 def instances_reboot_hard(region, uuids, flags, verbosity, dry, quiet):
     instances = Instances(region, uuids, flags, verbosity, dry, quiet)

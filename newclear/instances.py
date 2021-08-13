@@ -5,6 +5,12 @@ from newclear.instance import Instance
 
 class Instances:
     '''Instance tool'''
+    flags_help = "Set some flags on this instance list"
+    verbosity_help = "Verbosity flag, you can choose the level of debugging"
+    dry_help = "Do not do real actions"
+    quiet_help = "Print only important messages"
+    force_help = "Force action"
+
     def __init__(self, region: str, uuids: List[uuid.UUID], flags: Optional[List[str]] = None, verbosity: int = 1, dry: bool = False, quiet: bool = True):
         self.region = region
         self.flags = flags

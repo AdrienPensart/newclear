@@ -320,6 +320,14 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "ordered-set"
+version = "4.0.2"
+description = "A set that remembers its order, and allows looking up its items by their index in that order."
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
 name = "packaging"
 version = "21.0"
 description = "Core utilities for Python packages"
@@ -564,7 +572,7 @@ python-versions = "*"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.9"
-content-hash = "60a0c1f6c5cda4e5449fdfc4232e66ecdce1b95932a99bf1e8c303043cbee039"
+content-hash = "afaf9844044f9efa3e44059f8df172618e2aef57ba902d3442cd06dd0367f40b"
 
 [metadata.files]
 astroid = [
@@ -748,6 +756,9 @@ mypy = [
 mypy-extensions = [
     {file = "mypy_extensions-0.4.3-py2.py3-none-any.whl", hash = "sha256:090fedd75945a69ae91ce1303b5824f428daf5a028d2f6ab8a299250a846f15d"},
     {file = "mypy_extensions-0.4.3.tar.gz", hash = "sha256:2d82818f5bb3e369420cb3c4060a7970edba416647068eb4c5343488a6c604a8"},
+]
+ordered-set = [
+    {file = "ordered-set-4.0.2.tar.gz", hash = "sha256:ba93b2df055bca202116ec44b9bead3df33ea63a7d5827ff8e16738b97f33a95"},
 ]
 packaging = [
     {file = "packaging-21.0-py3-none-any.whl", hash = "sha256:c86254f9220d55e31cc94d69bade760f0847da8000def4dfe1c6b872fd14ff14"},

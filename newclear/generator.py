@@ -4,38 +4,51 @@ import uuid
 import inspect
 import typing
 import inflection
+from ordered_set import OrderedSet
 
 logger = logging.getLogger(__name__)
 
 
-def codegen(prog_name, version, classes):
-    code = '''#!/usr/bin/env python3
+class CliGenerator:
+    def __init__(self, prog_name, version, classes):
+        self.prog_name = prog_name
+        self.version = version
+        self.classes = {
+            class_ref.__name__: ClassToGen(class_ref, self)
+            for class_ref in classes
+        }
+
+    def generate(self):
+        code = '''#!/usr/bin/env python3
 import sys
 import click
 from click_skeleton import AdvancedGroup, skeleton
 '''
-    classes_to_gen = [ClassToGen(class_ref) for class_ref in classes]
-    for class_to_gen in classes_to_gen:
+
+        for class_ref in self.classes.values():
+            code += f'''
+from newclear.{class_ref.snake} import {class_ref.name}'''
+
         code += f'''
-from newclear.{class_to_gen.snake} import {class_to_gen.name}'''
-    code += f'''
 
 
-@skeleton(name='{prog_name}', version='{version}')
+@skeleton(name='{self.prog_name}', version='{self.version}')
 def cli():
     pass
 
 '''
-    for class_to_gen in classes_to_gen:
-        code += class_to_gen.gen()
+        for class_ref in self.classes.values():
+            code += class_ref.generate()
+            logger.error("\n")
 
-    code += f'''
-sys.exit(cli.main(prog_name='{prog_name}'))'''
-    return code
+        code += f'''
+sys.exit(cli.main(prog_name='{self.prog_name}'))'''
+        return code
 
 
 class ClassToGen:
-    def __init__(self, class_ref):
+    def __init__(self, class_ref, cli_generator):
+        self.cli_generator = cli_generator
         self.class_ref = class_ref
         self.options_help = {}
         self.constructor_signature = inspect.signature(self.constructor)
@@ -49,18 +62,41 @@ class ClassToGen:
                 continue
             self.options_help['_'.join(elems[0:-1])] = value
 
-        self.method_list = {}
-        for func in dir(self.class_ref):
-            if callable(getattr(self.class_ref, func)) and not func.startswith("_"):
-                self.method_list[func.replace("_", "-")] = func
+        self.methods = []
+        for method_name in dir(self.class_ref):
+            if callable(getattr(self.class_ref, method_name)) and not method_name.startswith("_"):
+                command_name = method_name.replace("_", "-")
+                method = MethodGenerator(command_name, method_name, self)
+                self.methods.append(method)
+
+    def __repr__(self):
+        return f"{self.name}"
+
+    def get_method(self, name):
+        return getattr(self.class_ref, name)
 
     @property
     def constructor(self):
         return self.class_ref.__init__
 
     @property
+    def constructor_parameters(self):
+        parameters = self.constructor_signature.parameters.copy()
+        del parameters['self']
+        return parameters
+
+    @property
+    def constructor_arguments(self):
+        return list(self.constructor_parameters.keys())
+
+    @property
     def name(self):
         return self.class_ref.__name__
+
+    @property
+    def instance(self):
+        joined_constructor_arguments = ', '.join(self.constructor_arguments)
+        return f'''{self.snake} = {self.name}({joined_constructor_arguments})'''
 
     @property
     def doc(self):
@@ -70,14 +106,15 @@ class ClassToGen:
     def snake(self):
         return inflection.underscore(self.name)
 
-    def gen(self):
+    def generate(self):
         code = f'''
 @click.group('{self.snake}', help='{self.doc}', cls=AdvancedGroup)
 def {self.snake}_cli():
     pass
 '''
-        for command_name, method_name in self.method_list.items():
-            code += self.gen_method(command_name, method_name)
+        for method in self.methods:
+            logger.error(f"\nGenerating {method}")
+            code += method.generate()
 
         code += f'''
 
@@ -86,19 +123,19 @@ cli.add_group({self.snake}_cli, '{self.snake}')
 '''
         return code
 
-    def gen_constructor_parameters(self, constructor_parameters):
+    def generate_constructor_parameters(self, method_generator=None):
         code = ""
-        for constructor_parameter in constructor_parameters.values():
-            code += self.gen_parameter(constructor_parameter)
+        for parameter in self.constructor_parameters.values():
+            code += self.generate_parameter(parameter, method_generator)
         return code
 
-    def gen_parameter(self, parameter):
+    def generate_parameter(self, parameter, method_generator=None):
         default_value = parameter.default
         annotation = parameter.annotation
+        logger.error(f"{self} : {parameter=} | {default_value=} | {annotation=} | {method_generator=}")
         origin = typing.get_origin(annotation)
         args = typing.get_args(annotation)
         help_string = self.options_help.get(parameter.name, "")
-        logger.error(f"{parameter} : origin = {origin} | args = {args} | default value = {default_value}")
         code = ""
 
         if (origin is None or origin is list) and default_value is inspect.Parameter.empty:
@@ -127,7 +164,7 @@ cli.add_group({self.snake}_cli, '{self.snake}')
             new_origin = typing.get_origin(args[0])
             if new_origin is list:
                 annotation = new_args[0]
-                logger.error(f"{parameter} : new annotation {annotation}")
+                logger.error(f"{parameter=} : new {annotation=}")
                 help_string += '  [multiple]'
                 code += '''
     multiple=True,'''
@@ -152,7 +189,12 @@ cli.add_group({self.snake}_cli, '{self.snake}')
             code += '''
     type=click.INT,'''
         else:
-            logger.error(f"Unsupported param : {annotation}, defaults to string")
+            class_name = annotation.__name__
+            if class_name in self.cli_generator.classes:
+                if method_generator:
+                    logger.error(f"Adding intermediate class {class_name} to {method_generator}")
+                    method_generator.intermediate_classes.add(self.cli_generator.classes[class_name])
+                return self.cli_generator.classes[class_name].generate_constructor_parameters(method_generator)
 
         if help_string:
             code += f'''
@@ -161,34 +203,52 @@ cli.add_group({self.snake}_cli, '{self.snake}')
 )'''
         return code
 
-    def gen_method(self, command_name, method_name):
-        constructor_parameters = self.constructor_signature.parameters.copy()
-        del constructor_parameters['self']
-        constructor_arguments = ', '.join(constructor_parameters.keys())
 
-        method = getattr(self.class_ref, method_name)
-        method_docstring = method.__doc__
-        method_signature = inspect.signature(method)
-        method_parameters = method_signature.parameters.copy()
-        del method_parameters['self']
-        method_arguments = ', '.join(method_parameters.keys())
-        command_arguments = ', '.join(constructor_parameters.keys())
-        if method_parameters:
-            command_arguments += ', ' + method_arguments
+class MethodGenerator:
+    def __init__(self, command_name, method_name, class_ref):
+        self.command_name = command_name
+        self.method_name = method_name
+        self.class_ref = class_ref
+        self.method = self.class_ref.get_method(self.method_name)
+        self.method_docstring = self.method.__doc__
+        self.method_signature = inspect.signature(self.method)
+        self.method_parameters = self.method_signature.parameters.copy()
+        self.intermediate_classes = OrderedSet()
+        del self.method_parameters['self']
+        self.method_arguments = list(self.method_parameters.keys())
 
+    def __repr__(self):
+        return f"{self.command_name=} | {self.method_name=}"
+
+    def generate(self):
         code = f'''
 
-@{self.snake}_cli.command('{command_name}', short_help='{method_docstring}')'''
+@{self.class_ref.snake}_cli.command('{self.command_name}', short_help='{self.method_docstring}')'''
 
-        code += self.gen_constructor_parameters(constructor_parameters)
+        code += self.class_ref.generate_constructor_parameters(self)
 
-        for method_parameter in method_parameters.values():
-            code += self.gen_parameter(method_parameter)
+        for method_parameter in self.method_parameters.values():
+            logger.error(f"generating {method_parameter} with {self}")
+            code += self.class_ref.generate_parameter(method_parameter, self)
+
+        intermediate_arguments = OrderedSet()
+        for intermediate_class in self.intermediate_classes:
+            for constructor_argument in intermediate_class.constructor_arguments:
+                intermediate_arguments.add(constructor_argument)
+
+        command_arguments = OrderedSet(self.class_ref.constructor_arguments + list(intermediate_arguments) + self.method_arguments)
+        joined_command_arguments = ', '.join(command_arguments)
+        joined_method_arguments = ', '.join(self.method_arguments)
+
+        intermediate_instances = ""
+        for intermediate_class in self.intermediate_classes:
+            intermediate_instances += f"    {intermediate_class.instance}\n"
 
         code += f'''
-def {self.snake}_{method_name}({command_arguments}):
-    {self.snake} = {self.name}({constructor_arguments})
-    {self.snake}.{method_name}({method_arguments})
+def {self.class_ref.snake}_{self.method_name}({joined_command_arguments}):
+{intermediate_instances}
+    {self.class_ref.instance}
+    {self.class_ref.snake}.{self.method_name}({joined_method_arguments})
 '''
 
         return code

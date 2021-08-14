@@ -1,8 +1,8 @@
 class Region:
     '''Region tool'''
 
-    def __init__(self, name: str, dry: bool = False):
-        self.name = name
+    def __init__(self, region: str, dry: bool = False):
+        self.name = region
         self.dry = dry
 
     def __repr__(self):
@@ -10,3 +10,6 @@ class Region:
         if self.dry:
             rep += " (dry)"
         return rep
+
+    def show(self):
+        print(self)

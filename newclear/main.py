@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 from newclear.region import Region
-from newclear.region_instance import RegionInstance
-# from newclear.instance import Instance
-# from newclear.instances import Instances
-from newclear.generator import codegen
+from newclear.instance import Instance
+from newclear.aggregate import Aggregate
+from newclear.instances import Instances
+from newclear.generator import CliGenerator
 
-# classes_to_gen = [Region, Instance, Instances]
-classes_to_gen = [Region, RegionInstance]
+classes_to_gen = [Region, Aggregate, Instance, Instances]
 prog_name = 'unity'
 version = '0.0.1'
 
 
 def main():
-    code = codegen(prog_name, version, classes_to_gen)
+    cli_generator = CliGenerator(prog_name, version, classes_to_gen)
+    code = cli_generator.generate()
     print(code)
 
 

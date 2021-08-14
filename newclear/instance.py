@@ -1,31 +1,23 @@
 import uuid
+from newclear.region import Region
 
 
 class Instance:
     '''Instance tool'''
-    verbosity_help = "Verbosity flag, you can choose the level of debugging"
-    dry_help = "Do not do real actions"
-    quiet_help = "Print only important messages"
     force_help = "Force action"
 
-    def __init__(self, region: str, uuid: uuid.UUID, verbosity: int = 1, dry: bool = False, quiet: bool = True):
+    def __init__(self, region: Region, uuid: uuid.UUID):
         self.region = region
         self.uuid = str(uuid)
-        self.verbosity = verbosity
-        self.dry = dry
-        self.quiet = quiet
 
     def __repr__(self):
-        rep = f"{self.uuid} - {self.region}"
-        if self.dry:
-            rep += " (dry)"
-        return rep
+        return f"{self.uuid} - {self.region}"
 
     def reboot(self, force: bool = False):
         '''Reboot an instance'''
-        print(f"{self=} : rebooting {force=}")
+        print(f"{self} : rebooting {force=}")
 
     def reboot_hard(self):
         '''Reboot hard instance'''
-        print(f"{self=} : rebooting hard")
+        print(f"{self} : rebooting hard")
         self.reboot(force=True)

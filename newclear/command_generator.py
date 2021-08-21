@@ -19,7 +19,7 @@ class CommandGenerator:
         self.method = self.class_ref.get_method(self.method_name)
         self.method_docstring = self.method.__doc__
         self.method_signature = inspect.signature(self.method)
-        self.method_parameters = self.method_signature.parameters.copy()
+        self.method_parameters = self.method_signature.parameters.copy()  # type: ignore
         self.intermediate_classes = OrderedSet()
         del self.method_parameters['self']
         self.method_arguments = list(self.method_parameters.keys())

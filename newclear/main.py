@@ -12,7 +12,7 @@ version = '0.0.1'
 
 
 @skeleton(name=prog_name, version=version, auto_envvar_prefix='NC')
-def cli(**kwargs):
+def cli():
     '''Class to CLI generator'''
 
 

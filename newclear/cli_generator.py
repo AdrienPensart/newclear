@@ -13,6 +13,7 @@ class CliGenerator:
         self.classes = {}
         for name, obj in inspect.getmembers(module):
             if inspect.isclass(obj):
+                print(f"Will generate {name}")
                 self.classes[obj.__name__] = GroupGenerator(obj, self)
 
     def generate(self):

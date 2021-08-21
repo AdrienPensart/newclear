@@ -1,7 +1,10 @@
+import logging
 from typing import List
-import uuid
-from newclear.region import Region
-from newclear.instance import Instance
+from uuid import UUID
+from unity.region import Region
+from unity.instance import Instance
+
+logger = logging.getLogger(__name__)
 
 
 class Instances:
@@ -9,7 +12,7 @@ class Instances:
     aliases = ["servers"]
     force_help = "Force action"
 
-    def __init__(self, region: Region, uuids: List[uuid.UUID]):
+    def __init__(self, region: Region, uuids: List[UUID]):
         self.region = region
         self.instances = [Instance(region=region, uuid=uuid) for uuid in uuids]
 

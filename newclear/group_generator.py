@@ -1,54 +1,20 @@
-from typing import Union, List
+from typing import TYPE_CHECKING, Union
 from pprint import pformat
 import logging
 import uuid
 import inspect
 import typing
 import inflection
-from ordered_set import OrderedSet  # type: ignore
+from newclear.command_generator import CommandGenerator
+
+if TYPE_CHECKING:
+    from newclear.cli_generator import CliGenerator
 
 logger = logging.getLogger(__name__)
 
 
-class CliGenerator:
-    def __init__(self, prog_name, version, classes):
-        self.prog_name = prog_name
-        self.version = version
-        self.classes = {
-            class_ref.__name__: GroupGenerator(class_ref, self)
-            for class_ref in classes
-        }
-
-    def generate(self):
-        code = '''#!/usr/bin/env python3
-import sys
-import click
-from click_skeleton import AdvancedGroup, skeleton
-'''
-
-        for class_ref in self.classes.values():
-            code += f'''
-from newclear.{class_ref.snake} import {class_ref.name}'''
-
-        code += f'''
-
-
-@skeleton(name='{self.prog_name}', version='{self.version}')
-def cli():
-    pass
-
-'''
-        for class_ref in self.classes.values():
-            code += class_ref.generate()
-            logger.error("\n")
-
-        code += f'''
-sys.exit(cli.main(prog_name='{self.prog_name}'))'''
-        return code
-
-
 class GroupGenerator:
-    def __init__(self, class_ref, cli_generator):
+    def __init__(self, class_ref, cli_generator: "CliGenerator"):
         self.cli_generator = cli_generator
         self.class_ref = class_ref
         self.options_help = {}
@@ -210,55 +176,4 @@ cli.add_group({self.snake}_cli, '{self.snake}')
     help="{help_string}",'''
         code += '''
 )'''
-        return code
-
-
-class CommandGenerator:
-    def __init__(self, command_name: str, method_name: str, command_aliases: List[str], class_ref: GroupGenerator):
-        self.command_name = command_name
-        self.method_name = method_name
-        self.command_aliases = command_aliases
-        self.class_ref = class_ref
-        self.method = self.class_ref.get_method(self.method_name)
-        self.method_docstring = self.method.__doc__
-        self.method_signature = inspect.signature(self.method)
-        self.method_parameters = self.method_signature.parameters.copy()
-        self.intermediate_classes = OrderedSet()
-        del self.method_parameters['self']
-        self.method_arguments = list(self.method_parameters.keys())
-
-    def __repr__(self):
-        return f"{self.command_name=} | {self.method_name=}"
-
-    def generate(self):
-        code = f'''
-
-@{self.class_ref.snake}_cli.command('{self.command_name}', short_help='{self.method_docstring}', aliases={pformat(self.command_aliases)})'''
-
-        code += self.class_ref.generate_constructor_parameters(self)
-
-        for method_parameter in self.method_parameters.values():
-            logger.error(f"generating {method_parameter} with {self}")
-            code += self.class_ref.generate_parameter(method_parameter, self)
-
-        intermediate_arguments = OrderedSet()
-        for intermediate_class in self.intermediate_classes:
-            for constructor_argument in intermediate_class.constructor_arguments:
-                intermediate_arguments.add(constructor_argument)
-
-        command_arguments = OrderedSet(self.class_ref.constructor_arguments + list(intermediate_arguments) + self.method_arguments)
-        joined_command_arguments = ', '.join(command_arguments)
-        joined_method_arguments = ', '.join(self.method_arguments)
-
-        intermediate_instances = ""
-        for intermediate_class in self.intermediate_classes:
-            intermediate_instances += f"    {intermediate_class.instance}\n"
-
-        code += f'''
-def {self.class_ref.snake}_{self.method_name}({joined_command_arguments}):
-{intermediate_instances}
-    {self.class_ref.instance}
-    {self.class_ref.snake}.{self.method_name}({joined_method_arguments})
-'''
-
         return code

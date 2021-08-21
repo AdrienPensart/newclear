@@ -20,7 +20,7 @@ class CliGenerator:
         code = '''#!/usr/bin/env python3
 import sys
 import click
-from click_skeleton import AdvancedGroup, skeleton
+from click_skeleton import AdvancedGroup, skeleton, doc
 '''
 
         for class_ref in self.classes.values():
@@ -33,6 +33,12 @@ from {self.module.__name__}.{class_ref.snake} import {class_ref.name}'''
 @skeleton(name='{self.prog_name}', version='{self.version}')
 def cli():
     pass
+
+@cli.command(help='Generates a complete readme', short_help='Generates a README.rst', aliases=['doc'])
+@click.pass_context
+@click.option('--output', help='README output format', type=click.Choice(['rst', 'markdown']), default='rst', show_default=True)
+def readme(ctx, output):
+    doc.readme(cli, ctx.obj.prog_name, ctx.obj.context_settings, output)
 
 '''
         for class_ref in self.classes.values():

@@ -14,12 +14,12 @@ def cli():
     pass
 
 
-@click.group('region', help='Region tool', cls=AdvancedGroup)
+@click.group('region', help='Region tool', cls=AdvancedGroup, aliases=['cluster'])
 def region_cli():
     pass
 
 
-@region_cli.command('show', short_help='None')
+@region_cli.command('show', short_help='None', aliases=[])
 @click.argument(
     'region',
     type=click.STRING,
@@ -39,12 +39,12 @@ def region_show(region, dry):
 cli.add_group(region_cli, 'region')
 
 
-@click.group('aggregate', help='Aggregate tool', cls=AdvancedGroup)
+@click.group('aggregate', help='Aggregate tool', cls=AdvancedGroup, aliases=[])
 def aggregate_cli():
     pass
 
 
-@aggregate_cli.command('show', short_help='None')
+@aggregate_cli.command('show', short_help='None', aliases=[])
 @click.argument(
     'region',
     type=click.STRING,
@@ -69,12 +69,12 @@ def aggregate_show(region, aggregate, dry):
 cli.add_group(aggregate_cli, 'aggregate')
 
 
-@click.group('instance', help='Instance tool', cls=AdvancedGroup)
+@click.group('instance', help='Instance tool', cls=AdvancedGroup, aliases=['server'])
 def instance_cli():
     pass
 
 
-@instance_cli.command('reboot', short_help='Reboot an instance')
+@instance_cli.command('reboot', short_help='Reboot an instance', aliases=['restart'])
 @click.argument(
     'region',
     type=click.STRING,
@@ -103,7 +103,7 @@ def instance_reboot(region, uuid, dry, force):
     instance.reboot(force)
 
 
-@instance_cli.command('reboot-hard', short_help='Reboot hard instance')
+@instance_cli.command('reboot-hard', short_help='Reboot hard instance', aliases=['restart-hard'])
 @click.argument(
     'region',
     type=click.STRING,
@@ -128,12 +128,12 @@ def instance_reboot_hard(region, uuid, dry):
 cli.add_group(instance_cli, 'instance')
 
 
-@click.group('instances', help='Instance tool', cls=AdvancedGroup)
+@click.group('instances', help='Instance tool', cls=AdvancedGroup, aliases=['servers'])
 def instances_cli():
     pass
 
 
-@instances_cli.command('reboot', short_help='Reboot an instance')
+@instances_cli.command('reboot', short_help='Reboot an instance', aliases=[])
 @click.argument(
     'region',
     type=click.STRING,
@@ -163,7 +163,7 @@ def instances_reboot(region, uuids, dry, force):
     instances.reboot(force)
 
 
-@instances_cli.command('reboot-hard', short_help='Reboot hard instance')
+@instances_cli.command('reboot-hard', short_help='Reboot hard instance', aliases=[])
 @click.argument(
     'region',
     type=click.STRING,

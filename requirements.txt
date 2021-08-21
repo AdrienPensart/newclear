@@ -13,11 +13,13 @@ colorama==0.4.4; python_version >= "3.6" and python_full_version < "3.0.0" and s
 defopt==6.1.0; python_version >= "3.5"
 docutils==0.17.1; python_version >= "3.5" and python_full_version < "3.0.0" or python_full_version >= "3.5.0" and python_version >= "3.5"
 idna==3.2; python_version >= "3.6" and python_full_version < "3.0.0" and python_version <= "3.9" or python_version >= "3.6" and python_version <= "3.9" and python_full_version >= "3.6.0"
+inflection==0.5.1; python_version >= "3.5"
 iniconfig==1.1.1; python_version >= "3.6" and python_version <= "3.9"
 jinja2==3.0.1; python_version >= "3.6" and python_version <= "3.9"
 makefun==1.11.3
 markupsafe==2.0.1; python_version >= "3.6" and python_version <= "3.9"
 munch==2.5.0; python_version >= "3.6" and python_version <= "3.9"
+ordered-set==4.0.2; python_version >= "3.5"
 packaging==21.0; python_version >= "3.6" and python_version <= "3.9"
 pluggy==0.13.1; python_version >= "3.6" and python_full_version < "3.0.0" and python_version <= "3.9" or python_version >= "3.6" and python_version <= "3.9" and python_full_version >= "3.4.0"
 pockets==0.9.1; python_version >= "3.5"

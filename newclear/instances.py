@@ -6,6 +6,7 @@ from newclear.instance import Instance
 
 class Instances:
     '''Instance tool'''
+    aliases = ["servers"]
     force_help = "Force action"
 
     def __init__(self, region: Region, uuids: List[uuid.UUID]):

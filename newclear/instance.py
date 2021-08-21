@@ -5,6 +5,9 @@ from newclear.region import Region
 class Instance:
     '''Instance tool'''
     force_help = "Force action"
+    reboot_aliases = ["restart"]
+    reboot_hard_aliases = ["restart-hard"]
+    aliases = ["server"]
 
     def __init__(self, region: Region, uuid: uuid.UUID):
         self.region = region

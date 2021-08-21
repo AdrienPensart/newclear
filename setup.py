@@ -10,7 +10,9 @@ package_data = \
 install_requires = \
 ['click-skeleton>=0.15,<0.16',
  'defopt>=6.0.1,<7.0.0',
+ 'inflection>=0.5.1,<0.6.0',
  'makefun>=1.9.3,<2.0.0',
+ 'ordered-set>=4.0.2,<5.0.0',
  'returns>=0.16.0,<0.17.0']
 
 entry_points = \

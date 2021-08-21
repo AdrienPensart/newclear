@@ -1,5 +1,6 @@
 class Region:
     '''Region tool'''
+    aliases = ["cluster"]
 
     def __init__(self, region: str, dry: bool = False):
         self.name = region

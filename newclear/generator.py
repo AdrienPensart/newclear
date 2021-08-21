@@ -1,10 +1,11 @@
-from typing import Union
+from typing import Union, List
+from pprint import pformat
 import logging
 import uuid
 import inspect
 import typing
 import inflection
-from ordered_set import OrderedSet
+from ordered_set import OrderedSet  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +15,7 @@ class CliGenerator:
         self.prog_name = prog_name
         self.version = version
         self.classes = {
-            class_ref.__name__: ClassToGen(class_ref, self)
+            class_ref.__name__: GroupGenerator(class_ref, self)
             for class_ref in classes
         }
 
@@ -46,27 +47,35 @@ sys.exit(cli.main(prog_name='{self.prog_name}'))'''
         return code
 
 
-class ClassToGen:
+class GroupGenerator:
     def __init__(self, class_ref, cli_generator):
         self.cli_generator = cli_generator
         self.class_ref = class_ref
         self.options_help = {}
+        self.cmd_aliases = {}
+        self.aliases = []
         self.constructor_signature = inspect.signature(self.constructor)
         for key, value in inspect.getmembers(self.class_ref):
             if key.startswith('_'):
                 continue
+            if key == 'aliases' and isinstance(value, list):
+                self.aliases = value
+                continue
             elems = key.split('_')
             if len(elems) < 2:
                 continue
-            if elems[-1] != "help":
-                continue
-            self.options_help['_'.join(elems[0:-1])] = value
+
+            name = '_'.join(elems[0:-1])
+            if elems[-1] == "help":
+                self.options_help[name] = value
+            elif elems[-1] == "aliases" and isinstance(value, list):
+                self.cmd_aliases[name] = value
 
         self.methods = []
         for method_name in dir(self.class_ref):
             if callable(getattr(self.class_ref, method_name)) and not method_name.startswith("_"):
                 command_name = method_name.replace("_", "-")
-                method = MethodGenerator(command_name, method_name, self)
+                method = CommandGenerator(command_name, method_name, self.cmd_aliases.get(method_name, []), self)
                 self.methods.append(method)
 
     def __repr__(self):
@@ -108,7 +117,7 @@ class ClassToGen:
 
     def generate(self):
         code = f'''
-@click.group('{self.snake}', help='{self.doc}', cls=AdvancedGroup)
+@click.group('{self.snake}', help='{self.doc}', cls=AdvancedGroup, aliases={pformat(self.aliases)})
 def {self.snake}_cli():
     pass
 '''
@@ -204,10 +213,11 @@ cli.add_group({self.snake}_cli, '{self.snake}')
         return code
 
 
-class MethodGenerator:
-    def __init__(self, command_name, method_name, class_ref):
+class CommandGenerator:
+    def __init__(self, command_name: str, method_name: str, command_aliases: List[str], class_ref: GroupGenerator):
         self.command_name = command_name
         self.method_name = method_name
+        self.command_aliases = command_aliases
         self.class_ref = class_ref
         self.method = self.class_ref.get_method(self.method_name)
         self.method_docstring = self.method.__doc__
@@ -223,7 +233,7 @@ class MethodGenerator:
     def generate(self):
         code = f'''
 
-@{self.class_ref.snake}_cli.command('{self.command_name}', short_help='{self.method_docstring}')'''
+@{self.class_ref.snake}_cli.command('{self.command_name}', short_help='{self.method_docstring}', aliases={pformat(self.command_aliases)})'''
 
         code += self.class_ref.generate_constructor_parameters(self)
 

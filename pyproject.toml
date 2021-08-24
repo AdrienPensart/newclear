@@ -10,10 +10,10 @@ newclear = 'newclear.main:main'
 [tool.poetry.dependencies]
 python = ">=3.8,<3.9"
 makefun = "^1.9.3"
-click-skeleton = "^0.15"
 returns = "^0.16.0"
 inflection = "^0.5.1"
 ordered-set = "^4.0.2"
+click-skeleton = "^0.16"
 
 [tool.poetry.dev-dependencies]
 flake8 = "^3.8.3"
